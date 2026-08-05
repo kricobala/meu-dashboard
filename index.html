@@ -196,6 +196,8 @@ table.data td{padding:8px 10px;border-bottom:1px solid var(--line);}
   background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
   padding:10px;margin-bottom:8px;font-size:12px;cursor:grab;
 }
+.kcard.dragging{opacity:0.4;}
+.kanban-col{transition:border-color 0.15s;}
 .kcard .ex{font-weight:600;margin-bottom:4px;}
 .kcard .meta{color:var(--text-dim);font-size:11px;}
 .kcard .tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;}
@@ -951,17 +953,66 @@ function renderKanban(){
   );
   document.getElementById('kanbanBoard').innerHTML = KANBAN_STATUSES.map(status=>{
     const cards = filtered.filter(k=>k.status===status);
-    return `<div class="kanban-col">
+    return `<div class="kanban-col" data-status="${status}">
       <h4>${status} (${cards.length})</h4>
       ${cards.map(c=>`
-        <div class="kcard">
+        <div class="kcard" draggable="true" data-id="${c.id}">
           <div class="ex">${c.exercicio}</div>
           <div class="meta">${c.objetivo}</div>
           <div class="meta">${c.duracao} · ${c.series} x ${c.reps} · ${c.carga}</div>
           <div class="tags"><span class="tag">${c.tipo}</span><span class="tag">${c.categoria}</span></div>
+          <select class="kcard-status" data-id="${c.id}" style="margin-top:8px;width:100%;font-size:11px;padding:5px;">
+            ${KANBAN_STATUSES.map(s=>`<option value="${s}" ${s===c.status?'selected':''}>${s}</option>`).join('')}
+          </select>
         </div>`).join('')}
     </div>`;
   }).join('');
+
+  document.querySelectorAll('.kcard').forEach(card=>{
+    card.addEventListener('dragstart', (e)=>{
+      e.dataTransfer.setData('text/plain', card.dataset.id);
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', ()=> card.classList.remove('dragging'));
+  });
+
+  document.querySelectorAll('.kcard-status').forEach(sel=>{
+    sel.addEventListener('click', e=> e.stopPropagation());
+    sel.addEventListener('change', (e)=>{
+      const id = parseInt(e.target.dataset.id, 10);
+      const newStatus = e.target.value;
+      const cardData = state.kanban.find(k=>k.id === id);
+      if(cardData){
+        cardData.status = newStatus;
+        if(newStatus === 'Concluído' && !cardData.dataRealizada){
+          cardData.dataRealizada = new Date().toISOString().slice(0,10);
+        }
+        renderKanban();
+      }
+    });
+  });
+
+  document.querySelectorAll('.kanban-col').forEach(col=>{
+    col.addEventListener('dragover', (e)=>{
+      e.preventDefault();
+      col.style.borderColor = 'var(--fire)';
+    });
+    col.addEventListener('dragleave', ()=>{ col.style.borderColor = 'var(--line)'; });
+    col.addEventListener('drop', (e)=>{
+      e.preventDefault();
+      col.style.borderColor = 'var(--line)';
+      const id = parseInt(e.dataTransfer.getData('text/plain'), 10);
+      const newStatus = col.dataset.status;
+      const cardData = state.kanban.find(k=>k.id === id);
+      if(cardData){
+        cardData.status = newStatus;
+        if(newStatus === 'Concluído' && !cardData.dataRealizada){
+          cardData.dataRealizada = new Date().toISOString().slice(0,10);
+        }
+        renderKanban();
+      }
+    });
+  });
 }
 ['filterSemana','filterTipo','filterCategoria'].forEach(id=>{
   document.getElementById(id).addEventListener('change', renderKanban);
