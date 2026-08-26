@@ -453,8 +453,8 @@ select{
         <div><label>Qual joelho</label>
           <select id="regJoelhoLado"><option>Nenhum (sem dor)</option><option>Direito</option><option>Esquerdo</option><option>Ambos</option></select>
         </div>
-        <div><label>Dor (0-10)</label><input type="number" min="0" max="10" id="regDor" value="0"></div>
-        <div><label>Rigidez (0-10)</label><input type="number" min="0" max="10" id="regRigidez" value="0"></div>
+        <div><label>Dor (0-10, 10 = sem dor)</label><input type="number" min="0" max="10" id="regDor" value="10"></div>
+        <div><label>Rigidez (0-10, 10 = sem rigidez)</label><input type="number" min="0" max="10" id="regRigidez" value="10"></div>
         <div><label>Inchaço</label><select id="regInchaco"><option>Não</option><option>Sim</option></select></div>
         <div><label>Observações</label><input type="text" id="regObs" placeholder="Ex: leve ao flexionar"></div>
       </div>
@@ -562,8 +562,8 @@ select{
 
     <div class="section-title">Dor, rigidez e inchaço</div>
     <div class="grid grid-2">
-      <div class="card"><h3>Dor (0-10)</h3><div class="chart-wrap"><canvas id="chartDor"></canvas></div></div>
-      <div class="card"><h3>Rigidez (0-10)</h3><div class="chart-wrap"><canvas id="chartRigidez"></canvas></div></div>
+      <div class="card"><h3>Dor (0-10, maior = melhor)</h3><div class="chart-wrap"><canvas id="chartDor"></canvas></div></div>
+      <div class="card"><h3>Rigidez (0-10, maior = melhor)</h3><div class="chart-wrap"><canvas id="chartRigidez"></canvas></div></div>
     </div>
     <div class="section-title">Registros diários</div>
     <div class="card">
@@ -675,8 +675,8 @@ const DEFAULT_KANBAN = [{"semana": "Semana 1", "tipo": "Casa", "grupo": "Quadrí
 let state = {
   profile:{ pesoInicial:146, meta:100, alturaM:1.84 },
   measurements:[
-    {date:'2026-10-11', peso:146, cintura:130, quadril:128, peitoral:118, braco:38, antebraco:31, coxa:68, panturrilha:42, fcRepouso:82, sono:6, energia:5, dorJoelho:1, tempoBike:10, volumeTreino:20, cargaMedia:4},
-    {date:'2026-10-17', peso:144.8, cintura:129, quadril:127.5, peitoral:118, braco:38, antebraco:31, coxa:68, panturrilha:42, fcRepouso:80, sono:6, energia:6, dorJoelho:1, tempoBike:15, volumeTreino:24, cargaMedia:4}
+    {date:'2026-10-11', peso:146, cintura:130, quadril:128, peitoral:118, braco:38, antebraco:31, coxa:68, panturrilha:42, fcRepouso:82, sono:6, energia:5, dorJoelho:9, tempoBike:10, volumeTreino:20, cargaMedia:4},
+    {date:'2026-10-17', peso:144.8, cintura:129, quadril:127.5, peitoral:118, braco:38, antebraco:31, coxa:68, panturrilha:42, fcRepouso:80, sono:6, energia:6, dorJoelho:9, tempoBike:15, volumeTreino:24, cargaMedia:4}
   ],
   workouts:[
     {date:'2026-10-11', done:true, type:'Força A (Casa)', cardioMin:10},
@@ -688,9 +688,9 @@ let state = {
     {date:'2026-10-17', done:true, type:'Recuperação Ativa', cardioMin:20}
   ],
   joints:[
-    {date:'2026-10-11', joelho:'Ambos', dor:1, rigidez:1, inchaco:'Não', limitacao:'Nenhuma', obs:'Início do programa'},
-    {date:'2026-10-14', joelho:'Direito', dor:2, rigidez:2, inchaco:'Não', limitacao:'Leve ao flexionar', obs:'Após step-up, reduzido para F1'},
-    {date:'2026-10-17', joelho:'Ambos', dor:0, rigidez:0, inchaco:'Não', limitacao:'Nenhuma', obs:'Fim da semana 1'}
+    {date:'2026-10-11', joelho:'Ambos', dor:9, rigidez:9, inchaco:'Não', limitacao:'Nenhuma', obs:'Início do programa'},
+    {date:'2026-10-14', joelho:'Direito', dor:8, rigidez:8, inchaco:'Não', limitacao:'Leve ao flexionar', obs:'Após step-up, reduzido para F1'},
+    {date:'2026-10-17', joelho:'Ambos', dor:10, rigidez:10, inchaco:'Não', limitacao:'Nenhuma', obs:'Fim da semana 1'}
   ],
   checklist:[
     {date:'2026-10-11', treino:true, cardio:true, mobilidade:true, alongamento:true, peso:true, sono:true, hidratacao:true, fotos:false, dor:true},
@@ -848,7 +848,7 @@ function upsertPapisEntry(date, dados){
 
 // ---- NOTA ESPIRITUAL: cumprimento das 5 práticas diárias. null = sem registro naquele dia ----
 function notaEspiritual(entry){
-  if(!entry) return null;
+  if(!entry) return 0;
   const itens = ['missa','lectio','biblia','exame','terco'];
   const feitos = itens.filter(k=>entry[k]).length;
   return Math.round((feitos/itens.length)*100);
@@ -856,7 +856,7 @@ function notaEspiritual(entry){
 
 // ---- NOTA CAPACITAÇÃO: leitura (meta 50 pág/dia) + FP&A + idioma + preparação concurso ----
 function notaCapacitacao(entry){
-  if(!entry) return null;
+  if(!entry) return 0;
   const notaLeitura = Math.min(100, Math.round(((entry.leituraPaginas||0)/META_PAGINAS_DIA)*100));
   const notaFpa = entry.fpaFeito ? 100 : 0;
   const notaIdioma = entry.idiomaFeito ? 100 : 0;
@@ -871,27 +871,18 @@ function notaCapacitacao(entry){
 
 // ---- NOTA ENTRETENIMENTO: gaita + ukulele + mágica (peso igual) ----
 function notaEntretenimento(entry){
-  if(!entry) return null;
+  if(!entry) return 0;
   const itens = ['gaitaFeito','ukuleleFeito','magicaFeito'];
   const feitos = itens.filter(k=>entry[k]).length;
   return Math.round((feitos/itens.length)*100);
 }
 
-// ---- Combina componentes existentes com renormalização de peso (ignora os ausentes) ----
-function combinarComPesos(componentes){
-  const validos = componentes.filter(c => c.valor !== null && c.valor !== undefined);
-  if(!validos.length) return null;
-  const pesoTotal = validos.reduce((s,c)=>s+c.peso, 0);
-  if(pesoTotal === 0) return null;
-  return Math.min(100, Math.round(validos.reduce((s,c)=> s + c.valor*c.peso, 0) / pesoTotal));
-}
-
-// ---- NOTA FÍSICA: atividade + alimentação + corpóreo. Corpóreo conta em QUALQUER dia com medida registrada ----
+// ---- NOTA FÍSICA: atividade + alimentação + corpóreo. Dia sem registro em qualquer parte = 0 nessa parte ----
 function notaFisica(date, entry){
   const workoutsDoDia = state.workouts.filter(w=>w.date===date);
-  const notaAtividade = workoutsDoDia.length ? Math.round((workoutsDoDia.filter(w=>w.done).length/workoutsDoDia.length)*100) : null;
+  const notaAtividade = workoutsDoDia.length ? Math.round((workoutsDoDia.filter(w=>w.done).length/workoutsDoDia.length)*100) : 0;
 
-  let notaAlimentacao = null;
+  let notaAlimentacao = 0;
   if(entry && entry.refeicoes){
     const feitas = REFEICOES_PADRAO.filter(r=>entry.refeicoes[r.key]).length;
     const notaRefeicoes = Math.round((feitas/REFEICOES_PADRAO.length)*100);
@@ -907,28 +898,28 @@ function notaFisica(date, entry){
   const medidaDoDia = state.measurements.find(m=>m.date===date);
   const camposCorporais = ['peso','cintura','quadril','peitoral','braco','antebraco','coxa','panturrilha'];
   const temMedida = medidaDoDia ? camposCorporais.some(k=> medidaDoDia[k] !== null && medidaDoDia[k] !== undefined) : false;
-  const notaCorporeo = temMedida ? 100 : null;
+  const notaCorporeo = temMedida ? 100 : 0;
 
-  return combinarComPesos([
-    {valor: notaAtividade, peso: PESOS_NOTA_FISICA.atividade},
-    {valor: notaAlimentacao, peso: PESOS_NOTA_FISICA.alimentacao},
-    {valor: notaCorporeo, peso: PESOS_NOTA_FISICA.corporeo}
-  ]);
+  return Math.round(
+    notaAtividade*PESOS_NOTA_FISICA.atividade +
+    notaAlimentacao*PESOS_NOTA_FISICA.alimentacao +
+    notaCorporeo*PESOS_NOTA_FISICA.corporeo
+  );
 }
 
-// ---- NOTA GERAL: combinação ponderada das 4 dimensões, ignorando as que não têm dado no dia ----
+// ---- NOTA GERAL: combinação ponderada das 4 dimensões. Dimensão sem registro no dia = 0 ----
 function calcularNotasDoDia(date){
   const entry = getPapisEntry(date);
   const espiritual = notaEspiritual(entry);
   const fisica = notaFisica(date, entry);
   const capacitacao = notaCapacitacao(entry);
   const entretenimento = notaEntretenimento(entry);
-  const geral = combinarComPesos([
-    {valor: espiritual, peso: PESOS_NOTA_GERAL.espiritual},
-    {valor: fisica, peso: PESOS_NOTA_GERAL.fisica},
-    {valor: capacitacao, peso: PESOS_NOTA_GERAL.capacitacao},
-    {valor: entretenimento, peso: PESOS_NOTA_GERAL.entretenimento}
-  ]);
+  const geral = Math.min(100, Math.round(
+    espiritual*PESOS_NOTA_GERAL.espiritual +
+    fisica*PESOS_NOTA_GERAL.fisica +
+    capacitacao*PESOS_NOTA_GERAL.capacitacao +
+    entretenimento*PESOS_NOTA_GERAL.entretenimento
+  ));
   return {espiritual, fisica, capacitacao, entretenimento, geral};
 }
 
@@ -949,10 +940,10 @@ function diasComEntradaPapis(){
 
 function notaGeralAtual(){
   const dias = diasPapisValidos();
-  if(!dias.length) return {espiritual:null, fisica:null, capacitacao:null, entretenimento:null, geral:0, temDados:false};
+  if(!dias.length) return {espiritual:0, fisica:0, capacitacao:0, entretenimento:0, geral:0, temDados:false};
   const ultimoDia = dias[dias.length-1];
   const notas = calcularNotasDoDia(ultimoDia);
-  return {...notas, geral: notas.geral===null?0:notas.geral, temDados:true};
+  return {...notas, temDados:true};
 }
 
 function faixaNotaGeral(nota){
@@ -965,7 +956,7 @@ function faixaNotaGeral(nota){
 
 function consistenciaAtividade(chave){
   // chave: 'missa','lectio','biblia','exame','terco','fpaFeito','idiomaFeito','concursoFeito','gaitaFeito','ukuleleFeito','magicaFeito'
-  const dias = diasComEntradaPapis();
+  const dias = diasPapisValidos();
   let cumpridos = 0, sequenciaAtual = 0, melhorSequencia = 0;
   dias.forEach(d=>{
     const entry = getPapisEntry(d);
@@ -1015,10 +1006,10 @@ function calcularNivel(){
 function calcularSaudeArticular(){
   if(!state.joints.length) return null;
   const recentes = state.joints.slice(-7);
-  const mediaDor = recentes.reduce((s,j)=>s+(j.dor||0),0)/recentes.length;
-  const mediaRigidez = recentes.reduce((s,j)=>s+(j.rigidez||0),0)/recentes.length;
+  const mediaDor = recentes.reduce((s,j)=>s+(j.dor??10),0)/recentes.length;
+  const mediaRigidez = recentes.reduce((s,j)=>s+(j.rigidez??10),0)/recentes.length;
   const inchacoCount = recentes.filter(j=>j.inchaco==='Sim').length;
-  let score = 100 - (mediaDor*6) - (mediaRigidez*4) - (inchacoCount*5);
+  let score = (mediaDor/10*60) + (mediaRigidez/10*40) - (inchacoCount*5);
   score = Math.max(0, Math.min(100, Math.round(score)));
   let nivel, cor, recomendacao;
   if(score >= 80){ nivel='Boa'; cor='var(--green)'; recomendacao='Joelhos respondendo bem — pode manter a progressão planejada.'; }
@@ -1301,14 +1292,14 @@ const METRICS = [
   {key:'cargaMedia', label:'Carga média (kg)', color:'#B983E8'},
   {key:'sono', label:'Sono (0-10)', color:'#3FA7D6'},
   {key:'energia', label:'Energia (0-10)', color:'#F2B807'},
-  {key:'dorJoelho', label:'Dor nos joelhos (0-10)', color:'#E5484D'},
+  {key:'dorJoelho', label:'Dor nos joelhos (0-10, maior = melhor)', color:'#5FBE83'},
   {key:'fcRepouso', label:'FC repouso (bpm)', color:'#5FBE83'}
 ];
 
 let chartInstances = {};
 
 const METRIC_DIRECTION = {
-  peso:'lower', imc:'lower', cintura:'lower', dorJoelho:'lower', fcRepouso:'lower', quadril:'lower',
+  peso:'lower', imc:'lower', cintura:'lower', dorJoelho:'higher', fcRepouso:'lower', quadril:'lower',
   tempoBike:'higher', volumeTreino:'higher', cargaMedia:'higher', sono:'higher', energia:'higher',
   peitoral:'higher', braco:'higher', antebraco:'higher', coxa:'higher', panturrilha:'higher'
 };
@@ -1403,7 +1394,7 @@ function calcularTendenciaFit(dados, key){
 }
 
 function calcularConsistenciaGeral(getNota){
-  const dias = diasComEntradaPapis();
+  const dias = diasPapisValidos();
   let cumpridos=0, sequenciaAtual=0, melhorSequencia=0;
   dias.forEach(d=>{
     const ok = getNota(d) >= 80;
@@ -1440,7 +1431,7 @@ function renderEspiritual(){
     </div>`;
   }).join('');
 
-  const dias = diasComEntradaPapis();
+  const dias = diasPapisValidos();
   const notas = dias.map(d=>calcularNotasDoDia(d).espiritual);
   if(chartInstances['espiritual']) chartInstances['espiritual'].destroy();
   chartInstances['espiritual'] = new Chart(document.getElementById('chartEspiritual'), {
@@ -1458,7 +1449,7 @@ function renderEspiritual(){
 }
 
 function renderCapacitacao(){
-  const dias = diasComEntradaPapis();
+  const dias = diasPapisValidos();
   const paginasPorDia = dias.map(d=>{ const e=getPapisEntry(d); return e ? (e.leituraPaginas||0) : 0; });
   const totalPaginas = paginasPorDia.reduce((s,v)=>s+v,0);
   const mediaDiaria = dias.length ? Math.round(totalPaginas/dias.length) : 0;
@@ -1506,7 +1497,7 @@ function renderCapacitacao(){
 }
 
 function renderEntretenimento(){
-  const dias = diasComEntradaPapis();
+  const dias = diasPapisValidos();
   const habilidades = [
     {key:'gaitaFeito', tempoKey:'gaitaTempo', label:'Gaita', color:'#6FA98C'},
     {key:'ukuleleFeito', tempoKey:'ukuleleTempo', label:'Ukulele', color:'#3FA7D6'},
@@ -1759,7 +1750,7 @@ function renderJoelhos(){
   const ctxD = document.getElementById('chartDor');
   if(chartInstances['dor']) chartInstances['dor'].destroy();
   const dorValores = state.joints.map(j=>j.dor);
-  const dorIdx = melhorPiorIndices(dorValores, 'lower');
+  const dorIdx = melhorPiorIndices(dorValores, 'higher');
   chartInstances['dor'] = new Chart(ctxD, {
     type:'line',
     data:{ labels: state.joints.map(j=>j.date), datasets:[{label:'Dor', data:dorValores, borderColor:'#E5484D', backgroundColor:'#E5484D22', fill:true, tension:0.3}] },
@@ -1768,7 +1759,7 @@ function renderJoelhos(){
   const ctxR = document.getElementById('chartRigidez');
   if(chartInstances['rigidez']) chartInstances['rigidez'].destroy();
   const rigidezValores = state.joints.map(j=>j.rigidez);
-  const rigidezIdx = melhorPiorIndices(rigidezValores, 'lower');
+  const rigidezIdx = melhorPiorIndices(rigidezValores, 'higher');
   chartInstances['rigidez'] = new Chart(ctxR, {
     type:'line',
     data:{ labels: state.joints.map(j=>j.date), datasets:[{label:'Rigidez', data:rigidezValores, borderColor:'#F2B807', backgroundColor:'#F2B80722', fill:true, tension:0.3}] },
@@ -2043,16 +2034,14 @@ document.getElementById('btnSalvarRegistro').addEventListener('click', ()=>{
   });
 
   const joelhoLado = document.getElementById('regJoelhoLado').value;
-  if(joelhoLado !== 'Nenhum (sem dor)' || numOrNull('regDor') > 0){
-    upsertByDate(state.joints, date, {
-      joelho: joelhoLado,
-      dor: numOrNull('regDor') || 0,
-      rigidez: numOrNull('regRigidez') || 0,
-      inchaco: document.getElementById('regInchaco').value,
-      limitacao: document.getElementById('regObs').value ? document.getElementById('regObs').value : 'Nenhuma',
-      obs: document.getElementById('regObs').value
-    });
-  }
+  upsertByDate(state.joints, date, {
+    joelho: joelhoLado,
+    dor: numOrNull('regDor'),
+    rigidez: numOrNull('regRigidez'),
+    inchaco: document.getElementById('regInchaco').value,
+    limitacao: document.getElementById('regObs').value ? document.getElementById('regObs').value : 'Nenhuma',
+    obs: document.getElementById('regObs').value
+  });
 
   const cbExisting = state.checklist.find(c=>c.date===date);
   const cbData = { treino: treinoFeito, cardio: (numOrNull('regCardioMin')||0) > 0, peso: numOrNull('regPeso') !== null, sono: numOrNull('regSono') !== null, dor: joelhoLado !== 'Nenhum (sem dor)' };
