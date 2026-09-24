@@ -2243,28 +2243,49 @@ function renderConquistas(){
 }
 
 function fileToBase64(file){
-  return new Promise((resolve, reject)=>{
+  return new Promise((resolve)=>{
     if(!file){ resolve(null); return; }
-    const reader = new FileReader();
-    reader.onload = (e)=>{
-      const img = new Image();
-      img.onload = ()=>{
-        const maxDim = 900;
-        let w = img.width, h = img.height;
-        if(w > maxDim || h > maxDim){
-          if(w > h){ h = Math.round(h * (maxDim/w)); w = maxDim; }
-          else { w = Math.round(w * (maxDim/h)); h = maxDim; }
+    try{
+      const reader = new FileReader();
+      reader.onload = (e)=>{
+        try{
+          const img = new Image();
+          img.onload = ()=>{
+            try{
+              const maxDim = 900;
+              let w = img.width, h = img.height;
+              if(w > maxDim || h > maxDim){
+                if(w > h){ h = Math.round(h * (maxDim/w)); w = maxDim; }
+                else { w = Math.round(w * (maxDim/h)); h = maxDim; }
+              }
+              const canvas = document.createElement('canvas');
+              canvas.width = w; canvas.height = h;
+              canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+              resolve(canvas.toDataURL('image/jpeg', 0.72));
+            }catch(err){
+              console.warn('Falha ao processar/comprimir a imagem:', err);
+              resolve({__erro: true});
+            }
+          };
+          img.onerror = ()=>{
+            console.warn('Falha ao carregar a imagem (formato não suportado ou arquivo corrompido)');
+            resolve({__erro: true});
+          };
+          img.src = e.target.result;
+        }catch(err){
+          console.warn('Falha ao ler o resultado do arquivo:', err);
+          resolve({__erro: true});
         }
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.72));
       };
-      img.onerror = reject;
-      img.src = e.target.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+      reader.onerror = ()=>{
+        console.warn('Falha ao ler o arquivo de imagem');
+        resolve({__erro: true});
+      };
+      reader.readAsDataURL(file);
+    }catch(err){
+      console.warn('Falha inesperada ao processar a foto:', err);
+      resolve({__erro: true});
+    }
   });
 }
 
@@ -2272,10 +2293,31 @@ document.getElementById('btnSalvarFoto').addEventListener('click', async ()=>{
   if(!state.photos) state.photos = [];
   const date = document.getElementById('photoDate').value;
   if(!date){ alert('Escolha uma data antes de salvar.'); return; }
+  const btn = document.getElementById('btnSalvarFoto');
+  const textoOriginal = btn.innerHTML;
+  btn.innerHTML = 'Salvando...';
+  btn.disabled = true;
+
   const fFrontal = document.getElementById('photoFrontal').files[0];
   const fLateral = document.getElementById('photoLateral').files[0];
   const fCostas = document.getElementById('photoCostas').files[0];
-  const [frontal, lateral, costas] = await Promise.all([fileToBase64(fFrontal), fileToBase64(fLateral), fileToBase64(fCostas)]);
+
+  let frontal, lateral, costas;
+  try{
+    [frontal, lateral, costas] = await Promise.all([fileToBase64(fFrontal), fileToBase64(fLateral), fileToBase64(fCostas)]);
+  }catch(err){
+    console.error('Erro inesperado ao salvar fotos:', err);
+    alert('Não foi possível processar as fotos. Tente novamente, ou tente uma foto de cada vez.');
+    btn.innerHTML = textoOriginal;
+    btn.disabled = false;
+    return;
+  }
+
+  const falhas = [];
+  if(frontal && frontal.__erro){ falhas.push('frontal'); frontal = null; }
+  if(lateral && lateral.__erro){ falhas.push('lateral'); lateral = null; }
+  if(costas && costas.__erro){ falhas.push('costas'); costas = null; }
+
   const existing = state.photos.find(p=>p.date===date);
   if(existing){
     if(frontal) existing.frontal = frontal;
@@ -2292,6 +2334,15 @@ document.getElementById('btnSalvarFoto').addEventListener('click', async ()=>{
   const cb = state.checklist.find(c=>c.date===date);
   if(cb){ cb.fotos = true; renderChecklist(); }
   persistirEstadoComDebounce();
+
+  btn.innerHTML = textoOriginal;
+  btn.disabled = false;
+
+  if(falhas.length){
+    alert(`As fotos que deram certo foram salvas. Mas ${falhas.length===1 ? 'a foto' : 'as fotos'} de ${falhas.join(', ')} não pôde${falhas.length===1?'':'ram'} ser processada${falhas.length===1?'':'s'} (formato não suportado ou arquivo corrompido). Tente enviar de novo só essa(s).`);
+  } else if(frontal || lateral || costas){
+    // Confirmação silenciosa de sucesso (o botão volta ao normal + as fotos aparecem na tela)
+  }
 });
 
 function photoSlot(entry, angle, label){
@@ -3004,6 +3055,10 @@ function verificarAvisoBackup(){
    Usa um "código pessoal" escolhido por você como identificador do documento —
    não é autenticação formal. A segurança real depende das regras do Firestore.
    ========================================================================== */
+// Identifica este programa especificamente, pra evitar que um código de sincronização
+// reutilizado por engano entre o Papis Nota 10 e o YDKM Son misture os dados dos dois.
+const PROGRAMA_ID = 'ydkm_son';
+
 const firebaseConfig = {
   apiKey: "AIzaSyAHJUfAB2eirGmgwClUrJvw4hF0xMbuXVU",
   authDomain: "papis-nota-10.firebaseapp.com",
@@ -3067,6 +3122,10 @@ function iniciarListenerSync(){
       atualizarStatusSync(`Sincronizado (código: ${syncCode}).`, 'var(--green)');
       return;
     }
+    if(dados.programaId && dados.programaId !== PROGRAMA_ID){
+      atualizarStatusSync(`⚠️ Este código (${syncCode}) está sendo usado por outro programa (${dados.programaId}). Escolha um código diferente pra este dashboard — seus dados locais NÃO foram alterados.`, 'var(--red)');
+      return;
+    }
     const localTimestamp = (state._syncMeta && state._syncMeta.lastModified) || null;
     if(!localTimestamp || new Date(dados.lastModified) > new Date(localTimestamp)){
       try{
@@ -3102,7 +3161,8 @@ function enviarParaSincronizacao(){
   const estadoParaEnviar = Object.assign({}, state, { photos: [] });
   firestoreDB.collection('papis_sync').doc(syncCode).set({
     stateJson: JSON.stringify(estadoParaEnviar),
-    lastModified: agora
+    lastModified: agora,
+    programaId: PROGRAMA_ID
   }).catch(err=>{
     console.warn('Falha ao enviar dados para sincronização:', err);
     atualizarStatusSync('Falha ao sincronizar — seus dados continuam salvos localmente.', 'var(--gold)');
