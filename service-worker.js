@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ydkm-son-cache-v14';
+const CACHE_NAME = 'ydkm-son-cache-v15';
 const ASSETS_TO_CACHE = [
   './index.html',
   './manifest.json',
