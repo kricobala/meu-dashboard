@@ -767,26 +767,26 @@ select{
 let state = {
   profile:{ pesoInicial:146, meta:100, alturaM:1.84 },
   measurements:[
-    {date:'2026-09-30', peso:146, cintura:130, quadril:128, peitoral:118, braco:38, antebraco:31, coxa:68, panturrilha:42, fcRepouso:82, sono:6, energia:5, dorJoelho:9, tempoBike:10, volumeTreino:20, cargaMedia:4},
-    {date:'2026-10-06', peso:144.8, cintura:129, quadril:127.5, peitoral:118, braco:38, antebraco:31, coxa:68, panturrilha:42, fcRepouso:80, sono:6, energia:6, dorJoelho:9, tempoBike:15, volumeTreino:24, cargaMedia:4}
+    {date:'2026-10-01', peso:146, cintura:130, quadril:128, peitoral:118, braco:38, antebraco:31, coxa:68, panturrilha:42, fcRepouso:82, sono:6, energia:5, dorJoelho:9, tempoBike:10, volumeTreino:20, cargaMedia:4},
+    {date:'2026-10-07', peso:144.8, cintura:129, quadril:127.5, peitoral:118, braco:38, antebraco:31, coxa:68, panturrilha:42, fcRepouso:80, sono:6, energia:6, dorJoelho:9, tempoBike:15, volumeTreino:24, cargaMedia:4}
   ],
   workouts:[
-    {date:'2026-09-30', done:true, type:'Força B (Casa)', cardioMin:10},
     {date:'2026-10-01', done:true, type:'Estabilização (Casa)', cardioMin:10},
     {date:'2026-10-02', done:true, type:'Força A (Casa)', cardioMin:10},
-    {date:'2026-10-03', done:false, type:'Funcional (Casa)', cardioMin:0},
-    {date:'2026-10-04', done:true, type:'Recuperação Ativa', cardioMin:20},
+    {date:'2026-10-03', done:true, type:'Funcional (Casa)', cardioMin:10},
+    {date:'2026-10-04', done:false, type:'Recuperação Ativa', cardioMin:0},
     {date:'2026-10-05', done:true, type:'Força A (Casa)', cardioMin:10},
-    {date:'2026-10-06', done:true, type:'Estabilização (Casa)', cardioMin:10}
+    {date:'2026-10-06', done:true, type:'Estabilização (Casa)', cardioMin:10},
+    {date:'2026-10-07', done:true, type:'Força B (Casa)', cardioMin:10}
   ],
   joints:[
-    {date:'2026-09-30', joelho:'Ambos', dor:9, rigidez:9, inchaco:'Não', limitacao:'Nenhuma', obs:'Início do programa'},
-    {date:'2026-10-03', joelho:'Direito', dor:8, rigidez:8, inchaco:'Não', limitacao:'Leve ao flexionar', obs:'Após step-up, reduzido para F1'},
-    {date:'2026-10-06', joelho:'Ambos', dor:10, rigidez:10, inchaco:'Não', limitacao:'Nenhuma', obs:'Fim da primeira semana'}
+    {date:'2026-10-01', joelho:'Ambos', dor:9, rigidez:9, inchaco:'Não', limitacao:'Nenhuma', obs:'Início do programa'},
+    {date:'2026-10-04', joelho:'Direito', dor:8, rigidez:8, inchaco:'Não', limitacao:'Leve ao flexionar', obs:'Após step-up, reduzido para F1'},
+    {date:'2026-10-07', joelho:'Ambos', dor:10, rigidez:10, inchaco:'Não', limitacao:'Nenhuma', obs:'Fim da primeira semana'}
   ],
   checklist:[
-    {date:'2026-09-30', treino:true, cardio:true, mobilidade:true, alongamento:true, peso:true, sono:true, hidratacao:true, fotos:false, dor:true},
-    {date:'2026-10-01', treino:true, cardio:true, mobilidade:true, alongamento:false, peso:false, sono:true, hidratacao:true, fotos:false, dor:true}
+    {date:'2026-10-01', treino:true, cardio:true, mobilidade:true, alongamento:true, peso:true, sono:true, hidratacao:true, fotos:false, dor:true},
+    {date:'2026-10-02', treino:true, cardio:true, mobilidade:true, alongamento:false, peso:false, sono:true, hidratacao:true, fotos:false, dor:true}
   ],
   photos:[],
   kanban: [],
@@ -845,7 +845,7 @@ const QUOTES = [
   {text:"Stay hard. O difícil de hoje é o motivo do orgulho de amanhã.", author:"Inspirado em David Goggins"}
 ];
 
-const QUOTE_START_DATE = new Date(2026, 8, 30); // Dia 1 do programa, avança 1 frase por dia
+const QUOTE_START_DATE = new Date(2026, 9, 1); // Dia 1 do programa, avança 1 frase por dia
 
 function daysSinceStart(d){
   const a = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -897,7 +897,7 @@ function nextWorkout(){
    mas não retroalimentam a Nota Geral (o sistema não back-preenche dados
    que não existem).
    ========================================================================== */
-const PAPIS_START_DATE = '2026-09-30';
+const PAPIS_START_DATE = '2026-10-01';
 
 // Pesos da Nota Geral — ajustáveis aqui, sem precisar tocar no resto do código.
 const PESOS_NOTA_GERAL = { espiritual:0.35, fisica:0.30, capacitacao:0.20, entretenimento:0.15 };
@@ -2873,6 +2873,25 @@ function buscarUltimaCargaConcluida(code, antesDe){
   return candidatos.length ? candidatos[0] : null;
 }
 
+function propagarCargaParaProximoCartao(cardConcluido){
+  // Quando um exercício é marcado Concluído (ou editado depois de já concluído), empurra a
+  // série/reps/carga atual pro PRÓXIMO cartão ainda Planejado desse mesmo exercício — assim o
+  // plano futuro reflete de onde você parou, mesmo que aquela semana já tivesse sido gerada
+  // antes de você registrar esse progresso.
+  const m = cardConcluido.exercicio.match(/^([A-Z]+\d+)\s-\s/);
+  if(!m) return;
+  const nomeCompleto = m[1] + ' - ';
+  const proximo = state.kanban
+    .filter(c => c.exercicio.startsWith(nomeCompleto) && c.status === 'Planejado' && c.dataPrevista > cardConcluido.dataPrevista)
+    .sort((a,b)=> new Date(a.dataPrevista) - new Date(b.dataPrevista))[0];
+  if(proximo){
+    proximo.series = cardConcluido.series;
+    proximo.reps = cardConcluido.reps;
+    proximo.carga = cardConcluido.carga;
+    proximo.cargaAutomatica = true;
+  }
+}
+
 const EXERCICIOS_AQUECIMENTO = [
   ['AQ1', 'Marcha no lugar com braços', '1 min'],
   ['AQ2', 'Círculos de ombro', '30s'],
@@ -3036,7 +3055,7 @@ function regenerarSemana(numero){
   state.kanban = state.kanban.concat(novos).sort((a,b)=> new Date(a.dataPrevista)-new Date(b.dataPrevista));
 }
 
-const LOCALSTORAGE_KEY = 'ydkm_son_state_v16';
+const LOCALSTORAGE_KEY = 'ydkm_son_state_v17';
 let autosaveTimeout = null;
 
 function persistirEstado(){
@@ -3413,9 +3432,18 @@ function renderKanban(){
           <div class="meta">${c.duracao}</div>
           ${c.cargaAutomatica ? '<div class="meta" style="color:var(--steel);"><i class="fa-solid fa-clock-rotate-left"></i> Carga do último treino concluído</div>' : ''}
           <div style="display:flex;gap:4px;margin-top:4px;">
-            <input type="text" class="kcard-series" data-id="${c.id}" value="${c.series}" placeholder="séries" title="Séries" style="width:33%;font-size:11px;padding:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;color:var(--text);text-align:center;">
-            <input type="text" class="kcard-reps" data-id="${c.id}" value="${c.reps}" placeholder="reps" title="Repetições" style="width:34%;font-size:11px;padding:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;color:var(--text);text-align:center;">
-            <input type="text" class="kcard-carga" data-id="${c.id}" value="${c.carga}" placeholder="carga" title="Carga" style="width:33%;font-size:11px;padding:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;color:var(--text);text-align:center;">
+            <div style="width:33%;">
+              <label style="display:block;font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:2px;text-align:center;">Séries</label>
+              <input type="text" class="kcard-series" data-id="${c.id}" value="${c.series}" title="Séries" style="width:100%;font-size:11px;padding:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;color:var(--text);text-align:center;">
+            </div>
+            <div style="width:34%;">
+              <label style="display:block;font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:2px;text-align:center;">Reps</label>
+              <input type="text" class="kcard-reps" data-id="${c.id}" value="${c.reps}" title="Repetições" style="width:100%;font-size:11px;padding:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;color:var(--text);text-align:center;">
+            </div>
+            <div style="width:33%;">
+              <label style="display:block;font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:2px;text-align:center;">Carga</label>
+              <input type="text" class="kcard-carga" data-id="${c.id}" value="${c.carga}" title="Carga" style="width:100%;font-size:11px;padding:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;color:var(--text);text-align:center;">
+            </div>
           </div>
           <div class="tags"><span class="tag">${c.tipo}</span><span class="tag">${c.categoria}</span></div>
           <select class="kcard-status" data-id="${c.id}" style="margin-top:8px;width:100%;font-size:11px;padding:5px;">
@@ -3447,6 +3475,9 @@ function renderKanban(){
           cardData.dataRealizada = new Date().toISOString().slice(0,10);
           mostrarToast('✅ Treino concluído! Mandou bem.', true);
         }
+        if(newStatus === 'Concluído' && cardData.categoria !== 'Aquecimento' && cardData.categoria !== 'Resfriamento'){
+          propagarCargaParaProximoCartao(cardData);
+        }
         renderKanban();
         persistirEstadoComDebounce();
       }
@@ -3462,6 +3493,9 @@ function renderKanban(){
       if(e.target.classList.contains('kcard-series')) cardData.series = e.target.value;
       if(e.target.classList.contains('kcard-reps')) cardData.reps = e.target.value;
       if(e.target.classList.contains('kcard-carga')) cardData.carga = e.target.value;
+      if(cardData.status === 'Concluído' && cardData.categoria !== 'Aquecimento' && cardData.categoria !== 'Resfriamento'){
+        propagarCargaParaProximoCartao(cardData);
+      }
       persistirEstadoComDebounce();
     });
   });
@@ -3495,6 +3529,9 @@ function renderKanban(){
         if(newStatus === 'Concluído' && !cardData.dataRealizada){
           cardData.dataRealizada = new Date().toISOString().slice(0,10);
           mostrarToast('✅ Treino concluído! Mandou bem.', true);
+        }
+        if(newStatus === 'Concluído' && cardData.categoria !== 'Aquecimento' && cardData.categoria !== 'Resfriamento'){
+          propagarCargaParaProximoCartao(cardData);
         }
         renderKanban();
         persistirEstadoComDebounce();
