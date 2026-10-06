@@ -3209,6 +3209,17 @@ function iniciarListenerSync(){
       atualizarStatusSync(`⚠️ Este código (${syncCode}) está sendo usado por outro programa (${dados.programaId}). Escolha um código diferente pra este dashboard — seus dados locais NÃO foram alterados.`, 'var(--red)');
       return;
     }
+    // Proteção contra "programação antiga" na nuvem: se a cópia salva lá foi criada com outra data de
+    // início de programa (ex.: você reprogramou a data), NÃO aplica por cima do que está neste aparelho.
+    try{
+      const estadoNuvem = JSON.parse(dados.stateJson);
+      const inicioNuvem = estadoNuvem && estadoNuvem.semanas && estadoNuvem.semanas[0] && estadoNuvem.semanas[0].dataInicio;
+      if(inicioNuvem && inicioNuvem !== PAPIS_START_DATE){
+        const fmt = (iso)=> iso.split('-').reverse().join('/');
+        atualizarStatusSync(`ℹ️ A cópia na nuvem (código ${syncCode}) é de um programa que começava em ${fmt(inicioNuvem)}; este começa em ${fmt(PAPIS_START_DATE)}. Seus dados deste aparelho foram mantidos — o próximo salvamento atualiza a nuvem.`, 'var(--gold)');
+        return;
+      }
+    }catch(err){ /* se não der pra ler, segue o fluxo normal */ }
     const localTimestamp = (state._syncMeta && state._syncMeta.lastModified) || null;
     if(!localTimestamp || new Date(dados.lastModified) > new Date(localTimestamp)){
       try{
