@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ydkm-son-cache-v32';
+const CACHE_NAME = 'ydkm-son-cache-v34';
 const ASSETS_TO_CACHE = [
   './index.html',
   './manifest.json',
@@ -6,7 +6,7 @@ const ASSETS_TO_CACHE = [
   './icon-512.png'
 ];
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE)));
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE.map((u) => new Request(u, { cache: 'reload' })))));
   self.skipWaiting();
 });
 self.addEventListener('activate', (event) => {
@@ -18,7 +18,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match('./index.html'))
+      fetch(event.request, { cache: 'no-store' }).catch(() => caches.match('./index.html'))
     );
     return;
   }

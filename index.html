@@ -371,6 +371,7 @@ select{
     <div class="card" style="border-color:var(--fire);margin-bottom:20px;">
       <h3 style="margin-bottom:4px;">Seus dados agora são salvos automaticamente</h3>
       <p id="autosaveIndicator" style="font-size:12px;color:var(--green);margin:0 0 8px;">Autosave ativo neste navegador.</p>
+      <p id="versaoPrograma" style="font-size:11px;color:var(--text-dim);margin:0 0 8px;"></p>
       <p id="avisoBackupAtrasado" style="display:none;font-size:12px;color:var(--gold);background:rgba(242,184,7,0.1);border:1px solid var(--gold);border-radius:6px;padding:8px 10px;margin:0 0 12px;"></p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <button class="btn" id="btnLoadQuick" style="flex:1;min-width:200px;justify-content:center;padding:14px;font-size:14px;"><i class="fa-solid fa-folder-open"></i> Restaurar de um backup JSON</button>
@@ -767,26 +768,26 @@ select{
 let state = {
   profile:{ pesoInicial:146, meta:100, alturaM:1.84 },
   measurements:[
-    {date:'2026-10-14', peso:146, cintura:130, quadril:128, peitoral:118, braco:38, antebraco:31, coxa:68, panturrilha:42, fcRepouso:82, sono:6, energia:5, dorJoelho:9, tempoBike:10, volumeTreino:20, cargaMedia:4},
-    {date:'2026-10-20', peso:144.8, cintura:129, quadril:127.5, peitoral:118, braco:38, antebraco:31, coxa:68, panturrilha:42, fcRepouso:80, sono:6, energia:6, dorJoelho:9, tempoBike:15, volumeTreino:24, cargaMedia:4}
+    {date:'2026-10-18', peso:146, cintura:130, quadril:128, peitoral:118, braco:38, antebraco:31, coxa:68, panturrilha:42, fcRepouso:82, sono:6, energia:5, dorJoelho:9, tempoBike:10, volumeTreino:20, cargaMedia:4},
+    {date:'2026-10-24', peso:144.8, cintura:129, quadril:127.5, peitoral:118, braco:38, antebraco:31, coxa:68, panturrilha:42, fcRepouso:80, sono:6, energia:6, dorJoelho:9, tempoBike:15, volumeTreino:24, cargaMedia:4}
   ],
   workouts:[
-    {date:'2026-10-14', done:true, type:'Força B (Casa)', cardioMin:10},
-    {date:'2026-10-15', done:true, type:'Estabilização (Casa)', cardioMin:10},
-    {date:'2026-10-16', done:true, type:'Força A (Casa)', cardioMin:10},
-    {date:'2026-10-17', done:false, type:'Funcional (Casa)', cardioMin:0},
     {date:'2026-10-18', done:true, type:'Recuperação Ativa', cardioMin:20},
     {date:'2026-10-19', done:true, type:'Força A (Casa)', cardioMin:10},
-    {date:'2026-10-20', done:true, type:'Estabilização (Casa)', cardioMin:10}
+    {date:'2026-10-20', done:true, type:'Estabilização (Casa)', cardioMin:10},
+    {date:'2026-10-21', done:false, type:'Força B (Casa)', cardioMin:0},
+    {date:'2026-10-22', done:true, type:'Estabilização (Casa)', cardioMin:10},
+    {date:'2026-10-23', done:true, type:'Força A (Casa)', cardioMin:10},
+    {date:'2026-10-24', done:true, type:'Funcional (Casa)', cardioMin:10}
   ],
   joints:[
-    {date:'2026-10-14', joelho:'Ambos', dor:9, rigidez:9, inchaco:'Não', limitacao:'Nenhuma', obs:'Início do programa'},
-    {date:'2026-10-17', joelho:'Direito', dor:8, rigidez:8, inchaco:'Não', limitacao:'Leve ao flexionar', obs:'Após step-up, reduzido para F1'},
-    {date:'2026-10-20', joelho:'Ambos', dor:10, rigidez:10, inchaco:'Não', limitacao:'Nenhuma', obs:'Fim da primeira semana'}
+    {date:'2026-10-18', joelho:'Ambos', dor:9, rigidez:9, inchaco:'Não', limitacao:'Nenhuma', obs:'Início do programa'},
+    {date:'2026-10-21', joelho:'Direito', dor:8, rigidez:8, inchaco:'Não', limitacao:'Leve ao flexionar', obs:'Após step-up, reduzido para F1'},
+    {date:'2026-10-24', joelho:'Ambos', dor:10, rigidez:10, inchaco:'Não', limitacao:'Nenhuma', obs:'Fim da primeira semana'}
   ],
   checklist:[
-    {date:'2026-10-14', treino:true, cardio:true, mobilidade:true, alongamento:true, peso:true, sono:true, hidratacao:true, fotos:false, dor:true},
-    {date:'2026-10-15', treino:true, cardio:true, mobilidade:true, alongamento:false, peso:false, sono:true, hidratacao:true, fotos:false, dor:true}
+    {date:'2026-10-18', treino:true, cardio:true, mobilidade:true, alongamento:true, peso:true, sono:true, hidratacao:true, fotos:false, dor:true},
+    {date:'2026-10-19', treino:true, cardio:true, mobilidade:true, alongamento:false, peso:false, sono:true, hidratacao:true, fotos:false, dor:true}
   ],
   photos:[],
   kanban: [],
@@ -845,7 +846,7 @@ const QUOTES = [
   {text:"Stay hard. O difícil de hoje é o motivo do orgulho de amanhã.", author:"Inspirado em David Goggins"}
 ];
 
-const QUOTE_START_DATE = new Date(2026, 9, 14); // Dia 1 do programa, avança 1 frase por dia
+const QUOTE_START_DATE = new Date(2026, 9, 18); // Dia 1 do programa, avança 1 frase por dia
 
 function daysSinceStart(d){
   const a = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -897,7 +898,7 @@ function nextWorkout(){
    mas não retroalimentam a Nota Geral (o sistema não back-preenche dados
    que não existem).
    ========================================================================== */
-const PAPIS_START_DATE = '2026-10-14';
+const PAPIS_START_DATE = '2026-10-18';
 
 // Pesos da Nota Geral — ajustáveis aqui, sem precisar tocar no resto do código.
 const PESOS_NOTA_GERAL = { espiritual:0.35, fisica:0.30, capacitacao:0.20, entretenimento:0.15 };
@@ -3055,7 +3056,7 @@ function regenerarSemana(numero){
   state.kanban = state.kanban.concat(novos).sort((a,b)=> new Date(a.dataPrevista)-new Date(b.dataPrevista));
 }
 
-const LOCALSTORAGE_KEY = 'ydkm_son_state_v24';
+const LOCALSTORAGE_KEY = 'ydkm_son_state_v25';
 let autosaveTimeout = null;
 
 function persistirEstado(){
@@ -3762,9 +3763,31 @@ document.addEventListener('keydown', (e)=>{
   }
 });
 
+// Indicador de versão: mostra qual programação este arquivo carregou (ajuda a perceber versão antiga em cache).
+(function(){
+  const el = document.getElementById('versaoPrograma');
+  if(el){
+    const fmt = (iso)=> iso.split('-').reverse().join('/');
+    el.textContent = `Versão carregada: programa de ${fmt(PAPIS_START_DATE)} até ${fmt(EXPECTATIVA_TUDO_DATA)}.`;
+  }
+})();
+
+function mostrarAvisoNovaVersao(){
+  if(document.getElementById('avisoNovaVersao')) return;
+  const el = document.createElement('div');
+  el.id = 'avisoNovaVersao';
+  el.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:10000;background:var(--panel);border:2px solid var(--gold);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,0.4);';
+  el.innerHTML = '<span>Nova versão do app disponível.</span><button class="btn primary" id="btnAtualizarApp" style="padding:8px 12px;">Atualizar agora</button>';
+  document.body.appendChild(el);
+  const btn = document.getElementById('btnAtualizarApp');
+  if(btn) btn.addEventListener('click', ()=> location.reload());
+}
+
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+    const tinhaControlador = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('service-worker.js').then(reg=>{ try{ reg.update(); }catch(e){} }).catch(()=>{});
+    navigator.serviceWorker.addEventListener('controllerchange', ()=>{ if(tinhaControlador) mostrarAvisoNovaVersao(); });
   });
 }
 </script>
