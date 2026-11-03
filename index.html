@@ -768,26 +768,26 @@ select{
 let state = {
   profile:{ pesoInicial:146, meta:100, alturaM:1.84 },
   measurements:[
-    {date:'2026-11-01', peso:146, cintura:130, quadril:128, peitoral:118, braco:38, antebraco:31, coxa:68, panturrilha:42, fcRepouso:82, sono:6, energia:5, dorJoelho:9, tempoBike:10, volumeTreino:20, cargaMedia:4},
-    {date:'2026-11-07', peso:144.8, cintura:129, quadril:127.5, peitoral:118, braco:38, antebraco:31, coxa:68, panturrilha:42, fcRepouso:80, sono:6, energia:6, dorJoelho:9, tempoBike:15, volumeTreino:24, cargaMedia:4}
+    {date:'2026-11-04', peso:146, cintura:130, quadril:128, peitoral:118, braco:38, antebraco:31, coxa:68, panturrilha:42, fcRepouso:82, sono:6, energia:5, dorJoelho:9, tempoBike:10, volumeTreino:20, cargaMedia:4},
+    {date:'2026-11-10', peso:144.8, cintura:129, quadril:127.5, peitoral:118, braco:38, antebraco:31, coxa:68, panturrilha:42, fcRepouso:80, sono:6, energia:6, dorJoelho:9, tempoBike:15, volumeTreino:24, cargaMedia:4}
   ],
   workouts:[
-    {date:'2026-11-01', done:true, type:'Recuperação Ativa', cardioMin:20},
-    {date:'2026-11-02', done:true, type:'Força A (Casa)', cardioMin:10},
-    {date:'2026-11-03', done:false, type:'Estabilização (Casa)', cardioMin:0},
     {date:'2026-11-04', done:true, type:'Força B (Casa)', cardioMin:10},
     {date:'2026-11-05', done:true, type:'Estabilização (Casa)', cardioMin:10},
-    {date:'2026-11-06', done:true, type:'Força A (Casa)', cardioMin:10},
-    {date:'2026-11-07', done:true, type:'Funcional (Casa)', cardioMin:10}
+    {date:'2026-11-06', done:false, type:'Força A (Casa)', cardioMin:0},
+    {date:'2026-11-07', done:true, type:'Funcional (Casa)', cardioMin:10},
+    {date:'2026-11-08', done:true, type:'Caminhada 1h (Viagem)', cardioMin:60},
+    {date:'2026-11-09', done:true, type:'Caminhada 1h (Viagem)', cardioMin:60},
+    {date:'2026-11-10', done:true, type:'Caminhada 1h (Viagem)', cardioMin:60}
   ],
   joints:[
-    {date:'2026-11-01', joelho:'Ambos', dor:9, rigidez:9, inchaco:'Não', limitacao:'Nenhuma', obs:'Início do programa'},
-    {date:'2026-11-03', joelho:'Direito', dor:8, rigidez:8, inchaco:'Não', limitacao:'Leve ao flexionar', obs:'Após step-up, reduzido para F1'},
-    {date:'2026-11-07', joelho:'Ambos', dor:10, rigidez:10, inchaco:'Não', limitacao:'Nenhuma', obs:'Fim da primeira semana'}
+    {date:'2026-11-04', joelho:'Ambos', dor:9, rigidez:9, inchaco:'Não', limitacao:'Nenhuma', obs:'Início do programa'},
+    {date:'2026-11-07', joelho:'Direito', dor:8, rigidez:8, inchaco:'Não', limitacao:'Leve ao flexionar', obs:'Após step-up, reduzido para F1'},
+    {date:'2026-11-10', joelho:'Ambos', dor:10, rigidez:10, inchaco:'Não', limitacao:'Nenhuma', obs:'Fim da primeira semana'}
   ],
   checklist:[
-    {date:'2026-11-01', treino:true, cardio:true, mobilidade:true, alongamento:true, peso:true, sono:true, hidratacao:true, fotos:false, dor:true},
-    {date:'2026-11-02', treino:true, cardio:true, mobilidade:true, alongamento:false, peso:false, sono:true, hidratacao:true, fotos:false, dor:true}
+    {date:'2026-11-04', treino:true, cardio:true, mobilidade:true, alongamento:true, peso:true, sono:true, hidratacao:true, fotos:false, dor:true},
+    {date:'2026-11-05', treino:true, cardio:true, mobilidade:true, alongamento:false, peso:false, sono:true, hidratacao:true, fotos:false, dor:true}
   ],
   photos:[],
   kanban: [],
@@ -846,7 +846,7 @@ const QUOTES = [
   {text:"Stay hard. O difícil de hoje é o motivo do orgulho de amanhã.", author:"Inspirado em David Goggins"}
 ];
 
-const QUOTE_START_DATE = new Date(2026, 10, 1); // Dia 1 do programa, avança 1 frase por dia
+const QUOTE_START_DATE = new Date(2026, 10, 4); // Dia 1 do programa, avança 1 frase por dia
 
 function daysSinceStart(d){
   const a = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -898,7 +898,7 @@ function nextWorkout(){
    mas não retroalimentam a Nota Geral (o sistema não back-preenche dados
    que não existem).
    ========================================================================== */
-const PAPIS_START_DATE = '2026-11-01';
+const PAPIS_START_DATE = '2026-11-04';
 
 // Pesos da Nota Geral — ajustáveis aqui, sem precisar tocar no resto do código.
 const PESOS_NOTA_GERAL = { espiritual:0.35, fisica:0.30, capacitacao:0.20, entretenimento:0.15 };
@@ -1706,8 +1706,8 @@ function chartGridColor(){
 }
 
 let evolucaoPeriodo = 'tudo';
-const EXPECTATIVA_TUDO_DATA = '2027-09-12';
-const EXPECTATIVA_TUDO_LABEL = 'meta do programa (10/10)';
+const EXPECTATIVA_TUDO_DATA = '2027-02-01'; // 90 dias: 04/11/2026 (dia 1) até 01/02/2027 (dia 90)
+const EXPECTATIVA_TUDO_LABEL = 'fim do programa (01/02/2027)';
 
 function filtrarPorPeriodo(measurements, periodo){
   if(periodo === 'tudo' || measurements.length === 0) return measurements;
@@ -3010,7 +3010,7 @@ function gerarKanbanCompleto(semanas){
 
 function gerarSemanasIniciais(dataInicioStr, dataLimiteStr, maxSemanas){
   const dataLimite = dataLimiteStr || EXPECTATIVA_TUDO_DATA;
-  const limiteSemanas = maxSemanas || 12; // evita gerar o programa inteiro de uma vez (ex: 12 meses = 50+ semanas, pesado demais pra sincronização)
+  const limiteSemanas = maxSemanas || 20; // evita gerar o programa inteiro de uma vez (ex: 12 meses = 50+ semanas, pesado demais pra sincronização)
   const inicio = new Date(dataInicioStr+'T00:00:00');
   const limite = new Date(dataLimite+'T00:00:00');
   const semanas = [];
@@ -3025,7 +3025,8 @@ function gerarSemanasIniciais(dataInicioStr, dataLimiteStr, maxSemanas){
   let tipoAnterior = 'Casa';
   while(cursor <= limite && semanas.length < limiteSemanas){
     const dataInicioSemana = cursor.toISOString().slice(0,10);
-    const fimSemana = new Date(cursor); fimSemana.setDate(fimSemana.getDate()+6);
+    let fimSemana = new Date(cursor); fimSemana.setDate(fimSemana.getDate()+6);
+    if(fimSemana > limite) fimSemana = new Date(limite); // última semana termina no dia 90
     const tipo = tipoAnterior === 'Casa' ? 'Viagem' : 'Casa';
     semanas.push({numero, label:`Semana ${numero}`, tipo, dataInicio:dataInicioSemana, dataFim: fimSemana.toISOString().slice(0,10)});
     tipoAnterior = tipo;
@@ -3064,7 +3065,7 @@ function regenerarSemana(numero){
   state.kanban = state.kanban.concat(novos).sort((a,b)=> new Date(a.dataPrevista)-new Date(b.dataPrevista));
 }
 
-const LOCALSTORAGE_KEY = 'ydkm_son_state_v33';
+const LOCALSTORAGE_KEY = 'ydkm_son_state_v35';
 let autosaveTimeout = null;
 
 function persistirEstado(){
